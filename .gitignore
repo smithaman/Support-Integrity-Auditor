@@ -1,0 +1,27 @@
+# Data (download from Kaggle)
+data/raw/
+data/cache/
+
+# Large model outputs
+outputs/models/
+outputs/embeddings/
+outputs/faiss_index/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/secrets.toml
