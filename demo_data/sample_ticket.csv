@@ -1,0 +1,3 @@
+Ticket ID,Ticket Subject,Ticket Description,Ticket Priority,Ticket Channel,Customer Tier,Resolution Time
+T001,Cannot login to account,I have been unable to log into my account for the past 3 days. All my team members are also affected. We have a critical client demo tomorrow and cannot access any of our data.,Low,email,enterprise,72
+T002,Update my email address,Please update my email from old@company.com to new@company.com,Critical,chat,standard,1

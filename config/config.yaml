@@ -1,0 +1,175 @@
+# ─────────────────────────────────────────
+#  SIA — Support Integrity Auditor
+#  Central Configuration File
+# ─────────────────────────────────────────
+
+# ── Paths ────────────────────────────────────────────────────
+data:
+  raw_path:           data/raw/customer_support_tickets.csv
+  processed_path:     data/processed/tickets_processed.csv
+  pseudo_labels_path: data/processed/pseudo_labels.csv
+  train_path:         data/processed/train.csv
+  val_path:           data/processed/val.csv
+  test_path:          data/processed/test.csv
+  cache_dir:          data/cache/
+
+# ── Preprocessing ─────────────────────────────────────────────
+preprocessing:
+  max_text_length:  512
+  test_size:        0.15
+  val_size:         0.15
+  random_seed:      42
+  strip_noise:      true       # strip filler sentences from descriptions
+  noise_pattern:    '\b([A-Z][a-z]+ ){2,5}[a-z]+\.\s*$'
+
+# ── Embeddings ────────────────────────────────────────────────
+embeddings:
+  model_name:   BAAI/bge-small-en-v1.5   # swap to bge-base-en-v1.5 for +accuracy
+  batch_size:   64
+  normalize:    true
+  save_path:    outputs/embeddings/ticket_embeddings.npy
+  cache_path:   data/cache/embeddings_cache.npy
+
+# ── Signal 1 — Semantic Severity ──────────────────────────────
+signal1:
+  method:             anchor_similarity   # cosine sim vs severity anchors
+  scoring:            soft                # soft weighted score, not hard argmax
+  use_category_bias:  true                # boost score using Issue_Category
+  category_bias_weight: 0.2              # 20% weight to category bias
+
+# ── Signal 2 — Resolution Time Severity ───────────────────────
+signal2:
+  method:     continuous                 # continuous percentile scale (not hard bins)
+  clip_lower: 0.05                       # clip bottom 5% outliers
+  clip_upper: 0.95                       # clip top 5% outliers
+
+# ── Signal Fusion ─────────────────────────────────────────────
+# fusion:
+#   semantic_weight:    0.7
+#   resolution_weight:  0.3
+#   mismatch_threshold: 1.5                # |inferred - assigned| >= 1.5 → Mismatch
+#   target_mismatch_rate:                  # expected pseudo-label mismatch %
+#     min: 0.20
+#     max: 0.40
+
+fusion:
+  semantic_weight:    0.6    # was 0.7 — reduce slightly since NLP already in S1
+  resolution_weight:  0.4    # was 0.3 — increase since RT is still valuable
+  mismatch_threshold: 1.2    # was 1.5 — lower slightly for better spread
+  target_mismatch_rate:
+    min: 0.15
+    max: 0.40
+
+# ── Pseudo Labels ─────────────────────────────────────────────
+pseudo_labels:
+  threshold:        1.5
+  save_signals:     true                 # save individual signal scores for ablation
+
+# ── Classifier ────────────────────────────────────────────────
+# classifier:
+#   model_name:           microsoft/deberta-v3-small
+#   num_labels:           2
+#   max_length:           512
+#   train_batch_size:     16
+#   eval_batch_size:      32
+#   learning_rate:        2.0e-5
+#   weight_decay:         0.01
+#   num_epochs:           5
+#   warmup_ratio:         0.1
+#   save_dir:             outputs/models/deberta_classifier/
+#   seed:                 42
+#   metric_for_best:      macro_f1
+#   # Input features prepended to text as special tokens
+#   input_features:
+#     - channel
+#     - tier
+#     - issue_category
+#     - assigned_priority
+
+# classifier:
+#   model_name:           microsoft/deberta-v3-small
+#   num_labels:           2
+#   max_length:           512
+#   train_batch_size:     16
+#   eval_batch_size:      32
+#   learning_rate:        2.0e-5
+#   weight_decay:         0.01
+#   num_epochs:           5
+#   warmup_ratio:         0.1
+#   save_dir:             outputs/models/deberta_classifier/
+#   seed:                 42
+#   metric_for_best:      macro_f1
+#   prediction_threshold: 0.6    # ← add this — requires 60% confidence to flag mismatch
+#   input_features:
+#     - channel
+#     - tier
+#     - issue_category
+#     - assigned_priority
+    # resolution_time excluded — prevents pseudo-label leakage
+
+classifier:
+  model_name:           microsoft/deberta-v3-small
+  num_labels:           2
+  max_length:           512
+  train_batch_size:     16
+  eval_batch_size:      32
+  learning_rate:        1.0e-5    # was 2e-5 — halved for stability
+  weight_decay:         0.01
+  num_epochs:           5
+  warmup_ratio:         0.15      # was 0.10 — longer warmup for stability
+  save_dir:             outputs/models/deberta_classifier/
+  seed:                 42
+  metric_for_best:      macro_f1
+  prediction_threshold: 0.5
+  input_features:
+    - channel
+    - tier
+    - issue_category
+    - assigned_priority
+
+
+# ── Class Imbalance ───────────────────────────────────────────
+# imbalance:
+#   strategy:         weighted_loss        # weighted_loss | smote | oversample
+#   auto_compute:     true                 # compute weights from label distribution
+
+imbalance:
+  strategy:       weighted_loss
+  auto_compute:   true
+  manual_weights:           # override auto if needed
+    consistent: 0.5         # down-weight majority
+    mismatch:   3.5         # up-weight minority harder
+
+# ── FAISS ─────────────────────────────────────────────────────
+faiss:
+  index_type:       IndexFlatIP          # inner product on normalized = cosine sim
+  index_path:       outputs/faiss_index/sia_tickets.index
+  embeddings_path:  outputs/faiss_index/ticket_embeddings.npy
+  metadata_path:    outputs/faiss_index/ticket_metadata.json
+  top_k:            5
+
+# ── Dossier ───────────────────────────────────────────────────
+dossier:
+  output_path:      outputs/dossiers/evidence_dossiers.json
+  max_keywords:     3
+  verify:           true                 # run hallucination verification on every dossier
+
+# ── Evaluation ────────────────────────────────────────────────
+evaluation:
+  metrics_path:           outputs/metrics/evaluation.json
+  confusion_matrix_path:  outputs/metrics/confusion_matrix.png
+  thresholds:
+    accuracy:             0.83
+    macro_f1:             0.82
+    per_class_recall:     0.78
+
+# ── Adversarial Testing ───────────────────────────────────────
+adversarial:
+  num_cases:        10
+  pass_threshold:   7                    # ≥7/10 → 10% bonus
+
+# ── Logging ───────────────────────────────────────────────────
+logging:
+  level:      INFO
+  log_dir:    outputs/logs/
+  log_file:   outputs/logs/sia.log

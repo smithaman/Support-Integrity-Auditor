@@ -1,0 +1,6 @@
+Ticket ID,Ticket Subject,Ticket Description,Ticket Priority,Ticket Channel,Customer Tier,Resolution Time
+T001,Cannot login to account,I have been unable to log into my account for the past 3 days. All my team members are also affected.,Low,email,enterprise,72
+T002,Update email address,Please update my email from old@company.com to new@company.com,Critical,chat,standard,1
+T003,System outage - all users affected,Complete platform outage since 6am. 500+ users cannot work. Financial transactions are failing. SLA breach in 2 hours.,Medium,phone,enterprise,48
+T004,Question about billing cycle,When does my billing cycle reset each month?,High,email,standard,2
+T005,Password reset not working,The password reset email is not arriving. I need access urgently for a board presentation in 1 hour.,Low,chat,enterprise,8
