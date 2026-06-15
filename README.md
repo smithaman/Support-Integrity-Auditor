@@ -67,7 +67,7 @@ Evidence Dossier Generation
 ↓
 Streamlit Dashboard
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 - Python
 - Pandas
